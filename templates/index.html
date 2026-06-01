@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>VSOL Speed Monitor</title>
+    <style>
+        body { font-family: Arial; background: #0a0e27; color: white; text-align: center; }
+        .card { background: #1a1f3e; margin: 10px; padding: 15px; display: inline-block; width: 250px; border-radius: 10px; }
+        .download { color: #00ff88; font-size: 24px; }
+        .upload { color: #ffaa00; font-size: 24px; }
+        button { background: #00ff88; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🚀 VSOL Speed Monitor</h1>
+    <button onclick="fetchSpeeds()">Refresh</button>
+    <div id="speeds"></div>
+
+    <script>
+        async function fetchSpeeds() {
+            const res = await fetch('/api/speeds');
+            const data = await res.json();
+            let html = '';
+            for (let onu of data) {
+                html += `
+                    <div class="card">
+                        <h3>ONU ${onu.onu_id}</h3>
+                        <div class="download">⬇️ ${onu.rx_speed} Mbps</div>
+                        <div class="upload">⬆️ ${onu.tx_speed} Mbps</div>
+                    </div>
+                `;
+            }
+            document.getElementById('speeds').innerHTML = html;
+        }
+        fetchSpeeds();
+        setInterval(fetchSpeeds, 10000);
+    </script>
+</body>
+</html>
