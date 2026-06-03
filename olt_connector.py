@@ -1,6 +1,6 @@
 import telnetlib
 import time
-from olt_config import OLT_CONFIG   # ✅ FIX ADDED
+from olt_config import OLT_CONFIG
 
 class VSOLConnector:
     def __init__(self):
