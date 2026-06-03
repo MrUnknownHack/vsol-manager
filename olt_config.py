@@ -1,7 +1,7 @@
 import os
 
 OLT_CONFIG = {
-    "ip": os.environ.get("OLT_IP", "myolt.duckdns.org"),
+    "ip": os.environ.get("OLT_IP", "myolt01.duckdns.org"),
     "username": os.environ.get("OLT_USERNAME", "admin"),
     "password": os.environ.get("OLT_PASSWORD", "Xpon@Olt9417#"),
     "port": int(os.environ.get("OLT_PORT", 23))
