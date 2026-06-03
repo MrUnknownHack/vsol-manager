@@ -1,0 +1,32 @@
+{
+    "1": {
+        "name": "Ramesh Sharma",
+        "address": "Sector 62, Noida",
+        "phone": "9876543210",
+        "plan": "100 Mbps"
+    },
+    "2": {
+        "name": "Sneha Patel",
+        "address": "Sector 63, Noida",
+        "phone": "9876543211",
+        "plan": "200 Mbps"
+    },
+    "3": {
+        "name": "Amit Kumar",
+        "address": "Sector 64, Noida",
+        "phone": "9876543212",
+        "plan": "300 Mbps"
+    },
+    "4": {
+        "name": "Priya Singh",
+        "address": "Sector 65, Noida",
+        "phone": "9876543213",
+        "plan": "100 Mbps"
+    },
+    "5": {
+        "name": "Vikram Verma",
+        "address": "Sector 66, Noida",
+        "phone": "9876543214",
+        "plan": "150 Mbps"
+    }
+}
