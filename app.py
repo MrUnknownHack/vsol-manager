@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from speed_monitor import get_all_onu_speeds
 
@@ -7,11 +7,7 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return jsonify({
-        "status": "online",
-        "message": "VSOL OLT Speed Monitor (SNMP Mode)",
-        "cgnat_friendly": True
-    })
+    return render_template('index.html')
 
 @app.route('/api/speeds')
 def get_speeds():

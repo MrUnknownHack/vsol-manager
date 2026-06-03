@@ -1,38 +1,365 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>VSOL Speed Monitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>VSOL OLT Speed Monitor</title>
     <style>
-        body { font-family: Arial; background: #0a0e27; color: white; text-align: center; }
-        .card { background: #1a1f3e; margin: 10px; padding: 15px; display: inline-block; width: 250px; border-radius: 10px; }
-        .download { color: #00ff88; font-size: 24px; }
-        .upload { color: #ffaa00; font-size: 24px; }
-        button { background: #00ff88; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #10b981;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card h3 {
+            color: #6b7280;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .stat-card .unit {
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        /* Search */
+        .search-box {
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            width: 100%;
+            max-width: 400px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        /* Table */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            overflow-x: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8fafc;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Speed Indicators */
+        .speed-up {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .speed-down {
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .speed-bar {
+            width: 100px;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .speed-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s;
+        }
+
+        .fill-up {
+            background: #10b981;
+        }
+
+        .fill-down {
+            background: #3b82f6;
+        }
+
+        /* Status */
+        .online {
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .offline {
+            color: #ef4444;
+            font-weight: 600;
+        }
+
+        /* Refresh */
+        .refresh-info {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            font-size: 0.85rem;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            td, th {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+            
+            .stat-card .value {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: white;
+        }
+
+        .error {
+            background: #ef4444;
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>🚀 VSOL Speed Monitor</h1>
-    <button onclick="fetchSpeeds()">Refresh</button>
-    <div id="speeds"></div>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 VSOL OLT Speed Monitor</h1>
+            <p>Real-time ONU Bandwidth Monitoring</p>
+            <span class="status-badge" id="liveStatus">🟢 LIVE</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Total ONUs</h3>
+                <div class="value" id="totalOnus">0</div>
+                <div class="unit">Active Devices</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Download</h3>
+                <div class="value" id="totalDownload">0</div>
+                <div class="unit">Mbps</div>
+            </div>
+            <div class="stat-card">
+                <h3>Total Upload</h3>
+                <div class="value" id="totalUpload">0</div>
+                <div class="unit">Mbps</div>
+            </div>
+            <div class="stat-card">
+                <h3>Avg Speed</h3>
+                <div class="value" id="avgSpeed">0</div>
+                <div class="unit">Mbps</div>
+            </div>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Search by ONU ID or MAC..." onkeyup="filterTable()">
+        </div>
+
+        <div class="table-container">
+            <table id="onuTable">
+                <thead>
+                    <tr>
+                        <th>ONU ID</th>
+                        <th>📥 Download (RX)</th>
+                        <th>📤 Upload (TX)</th>
+                        <th>Status</th>
+                        <th>Total Traffic</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr>
+                        <td colspan="5" class="loading">Loading data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="refresh-info">
+            🔄 Auto-refreshing every 5 seconds | Last updated: <span id="lastUpdate">--:--:--</span>
+        </div>
+    </div>
 
     <script>
+        let onuData = [];
+
         async function fetchSpeeds() {
-            const res = await fetch('/api/speeds');
-            const data = await res.json();
-            let html = '';
-            for (let onu of data) {
-                html += `
-                    <div class="card">
-                        <h3>ONU ${onu.onu_id}</h3>
-                        <div class="download">⬇️ ${onu.rx_speed} Mbps</div>
-                        <div class="upload">⬆️ ${onu.tx_speed} Mbps</div>
-                    </div>
-                `;
+            try {
+                const response = await fetch('/api/speeds');
+                const data = await response.json();
+                onuData = data;
+                updateTable(data);
+                updateStats(data);
+                document.getElementById('lastUpdate').innerText = new Date().toLocaleTimeString();
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="5" class="error">⚠️ Error connecting to server. Make sure the API is running.</td></tr>';
             }
-            document.getElementById('speeds').innerHTML = html;
         }
+
+        function updateTable(data) {
+            const tbody = document.getElementById('tableBody');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No ONU data available</td></tr>';
+                return;
+            }
+
+            let html = '';
+            data.forEach(onu => {
+                const rxSpeed = onu.rx_speed || 0;
+                const txSpeed = onu.tx_speed || 0;
+                const total = rxSpeed + txSpeed;
+                
+                // Speed bar percentages (max 1000 Mbps reference)
+                const rxPercent = Math.min((rxSpeed / 1000) * 100, 100);
+                const txPercent = Math.min((txSpeed / 1000) * 100, 100);
+                
+                html += `
+                    <tr>
+                        <td><strong>#${onu.onu_id}</strong></td>
+                        <td>
+                            <span class="speed-down">${rxSpeed} Mbps</span>
+                            <div class="speed-bar">
+                                <div class="speed-bar-fill fill-down" style="width: ${rxPercent}%"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="speed-up">${txSpeed} Mbps</span>
+                            <div class="speed-bar">
+                                <div class="speed-bar-fill fill-up" style="width: ${txPercent}%"></div>
+                            </div>
+                        </td>
+                        <td><span class="online">🟢 Online</span></td>
+                        <td>${total} Mbps</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function updateStats(data) {
+            const totalOnus = data.length;
+            const totalDownload = data.reduce((sum, onu) => sum + (onu.rx_speed || 0), 0);
+            const totalUpload = data.reduce((sum, onu) => sum + (onu.tx_speed || 0), 0);
+            const avgSpeed = totalOnus > 0 ? Math.round((totalDownload + totalUpload) / totalOnus) : 0;
+
+            document.getElementById('totalOnus').innerText = totalOnus;
+            document.getElementById('totalDownload').innerText = totalDownload;
+            document.getElementById('totalUpload').innerText = totalUpload;
+            document.getElementById('avgSpeed').innerText = avgSpeed;
+        }
+
+        function filterTable() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = onuData.filter(onu => 
+                onu.onu_id.toString().includes(searchTerm)
+            );
+            updateTable(filtered);
+        }
+
+        // Auto refresh every 5 seconds
         fetchSpeeds();
-        setInterval(fetchSpeeds, 10000);
+        setInterval(fetchSpeeds, 5000);
     </script>
 </body>
 </html>
