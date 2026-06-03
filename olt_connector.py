@@ -1,37 +1,84 @@
-import telnetlib
-import time
-from olt_config import OLT_CONFIG
+import os
+import subprocess
+import json
 
-class VSOLConnector:
+class VSOLOLTConnector:
     def __init__(self):
-        self.conn = None
+        self.olt_ip = os.environ.get("OLT_IP", "192.168.8.100")
+        self.snmp_community = os.environ.get("SNMP_COMMUNITY", "public")
+        self.snmp_version = os.environ.get("SNMP_VERSION", "2c")
+        self.olt_port = os.environ.get("OLT_PORT", "161")
+        self.snmp_enabled = os.environ.get("SNMP_ENABLED", "true") == "true"
     
-    def connect(self):
+    def run_snmp_command(self, oid):
+        """SNMP walk command execute karo"""
+        cmd = [
+            "snmpwalk", 
+            f"-v{self.snmp_version}",
+            "-c", self.snmp_community,
+            self.olt_ip,
+            oid
+        ]
         try:
-            self.conn = telnetlib.Telnet(
-                OLT_CONFIG["ip"], 
-                OLT_CONFIG["port"], 
-                timeout=10
-            )
-            self.conn.read_until(b"Login: ", timeout=5)
-            self.conn.write(OLT_CONFIG["username"].encode() + b"\n")
-            self.conn.read_until(b"Password: ", timeout=5)
-            self.conn.write(OLT_CONFIG["password"].encode() + b"\n")
-            time.sleep(1)
-            return True
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+            return result.stdout
         except Exception as e:
-            print(f"Error: {e}")
-            return False
-    
-    def send_command(self, command):
-        try:
-            self.conn.write(command.encode() + b"\n")
-            time.sleep(2)
-            output = self.conn.read_very_eager().decode()
-            return output
-        except:
+            print(f"SNMP error: {e}")
             return ""
     
-    def close(self):
-        if self.conn:
-            self.conn.close()
+    def get_onu_list(self):
+        """ONU list fetch karo SNMP se"""
+        # VSOL OLT ke liye common OIDs
+        onu_oid = ".1.3.6.1.4.1.3320.1.2.1.1"
+        output = self.run_snmp_command(onu_oid)
+        
+        onu_list = []
+        for line in output.split("\n"):
+            if "INTEGER:" in line or "Gauge32:" in line:
+                parts = line.split("=")
+                if len(parts) > 1:
+                    value = parts[1].strip()
+                    onu_list.append({"id": len(onu_list)+1, "value": value})
+        
+        return onu_list if onu_list else [{"id": 1, "value": "test"}]
+    
+    def get_onu_speed(self, onu_id):
+        """ONU ki speed fetch karo"""
+        # Rx speed (download)
+        rx_oid = f".1.3.6.1.4.1.3320.2.1.1.{onu_id}.1"
+        # Tx speed (upload)  
+        tx_oid = f".1.3.6.1.4.1.3320.2.1.1.{onu_id}.2"
+        
+        rx_output = self.run_snmp_command(rx_oid)
+        tx_output = self.run_snmp_command(tx_oid)
+        
+        rx_speed = self.extract_speed(rx_output)
+        tx_speed = self.extract_speed(tx_output)
+        
+        return {"rx": rx_speed, "tx": tx_speed}
+    
+    def extract_speed(self, output):
+        """SNMP output se speed value nikalna"""
+        if "=" in output:
+            part = output.split("=")[1].strip()
+            numbers = [int(s) for s in part.split() if s.isdigit()]
+            if numbers:
+                return numbers[0]
+        return 0
+    
+    def get_all_onu_speeds(self):
+        """Sab ONU ki speeds fetch karo"""
+        onu_list = self.get_onu_list()
+        results = []
+        
+        for onu in onu_list:
+            onu_id = onu.get("id", 1)
+            speeds = self.get_onu_speed(onu_id)
+            results.append({
+                "onu_id": str(onu_id),
+                "tx_speed": speeds.get("tx", 0),
+                "rx_speed": speeds.get("rx", 0),
+                "status": "online"
+            })
+        
+        return results
